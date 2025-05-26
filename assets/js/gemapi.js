@@ -1,6 +1,7 @@
 // worker.js
 let machineConfig = null;
 let messages = null;
+let garbage = null;
 
 self.onmessage = async function(event) {
     // Parameters for the LLM API call from the main thread
@@ -8,7 +9,14 @@ self.onmessage = async function(event) {
     console.log('Worker received machine config:', machineConfig);
     messages = event.data.messages;
     console.log('Worker received messages:', messages);
-
+    // garbage
+    garbage = [
+        {'category':'HARM_CATEGORY_HATE_SPEECH', 'threshold': 'BLOCK_NONE'},
+        {'category':'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'threshold': 'BLOCK_NONE'},
+        {'category':'HARM_CATEGORY_DANGEROUS_CONTENT', 'threshold': 'BLOCK_NONE'},
+        {'category':'HARM_CATEGORY_HARASSMENT', 'threshold': 'BLOCK_NONE'},
+        {'category':'HARM_CATEGORY_CIVIC_INTEGRITY', 'threshold': 'BLOCK_NONE'}
+    ]
 
     try {
         // --- 1. Fetch the token ---
@@ -40,7 +48,7 @@ self.onmessage = async function(event) {
         }
 
         // --- 3. Prepare messages for the API call ---
-        const systemInstructionMessage = { role: "developer", content: instructionText };
+        const systemInstructionMessage = { role: "system", parts: [ { text: instructionText } ] };
         let messagesForApi;
 
         // Check if the main thread sent any messages
@@ -49,10 +57,10 @@ self.onmessage = async function(event) {
             messagesForApi = [systemInstructionMessage, ...messages];
             console.log('All messages for API:', messagesForApi)
         } else {
-            // No messages from user, or an empty array: use the system instruction and a default user prompt
+            // No messages from user, or an empty array: use the system instruction and a default user message
             messagesForApi = [
                 systemInstructionMessage,
-                { role: "user", content: "What model are you?" } // Default user prompt
+                { role: "user", parts: [{ text: "What model are you?"}] } // Default user message
             ];
         }
 
@@ -69,7 +77,7 @@ self.onmessage = async function(event) {
         // Merge default parameters, then incoming user parameters (which might override temp, max_tokens, etc.),
         const finalApiPayload = {
             ...defaultApiParameters,
-            messages: messagesForApi      // Ensure our carefully constructed messages array is used
+            contents: messagesForApi      // Ensure our carefully constructed messages array is used
         };
         console.log('Worker: Here is the final API payload:', finalApiPayload);
 

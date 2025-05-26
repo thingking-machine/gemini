@@ -1,1 +1,1 @@
-### Thingking Machine (OpenAI)
+### Thingking Machine (Gemini)
