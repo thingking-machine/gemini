@@ -2,11 +2,13 @@
 let machineConfig = null;
 let messages = null;
 let garbage = null;
+let llmSettings = null;
 
 self.onmessage = async function(event) {
     // Parameters for the LLM API call from the main thread
     machineConfig = event.data.config;
     console.log('Worker received machine config:', machineConfig);
+    llmSettings = event.data.settings;
     messages = event.data.messages;
     console.log('Worker received messages:', messages);
     // garbage
@@ -64,9 +66,12 @@ self.onmessage = async function(event) {
             ];
         }
 
+        // --- 4. Prepare the final API URL ---
+        const llm = llmSettings.model || machineConfig.llm;
+        const apiUrl = machineConfig.apiUrl + llm + ':generateContent?key=' + token
+
         // --- 4. Prepare the final API payload ---
         const defaultApiParameters = {
-            model: machineConfig.llm,
             max_completion_tokens: 4096,
             temperature: 1,
             top_p: 1,
@@ -85,15 +90,11 @@ self.onmessage = async function(event) {
         // --- 5. Make the LLM API call ---
         const apiOptions = {
             method: 'POST',
-            headers: {
-                'Authorization': 'Bearer ' + token,
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify(finalApiPayload)
         };
 
         console.log('Worker: Making API call Meta API with payload:', finalApiPayload);
-        const apiCallResponse = await fetch(machineConfig.apiUrl, apiOptions);
+        const apiCallResponse = await fetch(apiUrl, apiOptions);
 
         if (!apiCallResponse.ok) {
             let errorDetails = await apiCallResponse.text();
