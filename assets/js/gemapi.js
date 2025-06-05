@@ -56,12 +56,11 @@ self.onmessage = async function(event) {
         // Check if the main thread sent any messages
         if (messages && Array.isArray(messages) && messages.length > 0) {
             // User provided messages: unshift/prepend the fetched system instruction
-            messagesForApi = [systemInstructionMessage, ...messages];
+            messagesForApi = [messages];
             console.log('All messages for API:', messagesForApi)
         } else {
             // No messages from user, or an empty array: use the system instruction and a default user message
             messagesForApi = [
-                systemInstructionMessage,
                 { role: "user", parts: [{ text: "What model are you?"}] } // Default user message
             ];
         }
@@ -71,17 +70,28 @@ self.onmessage = async function(event) {
         const apiUrl = machineConfig.apiUrl + llm + ':generateContent?key=' + token
 
         // --- 4. Prepare the final API payload ---
-        const defaultApiParameters = {
-            max_completion_tokens: 4096,
-            temperature: 1,
-            top_p: 1,
-            response_format: {"type":"text"},
-            stream: false
+        const apiParameters = {
+            systemInstruction:      systemInstructionMessage,
+            safetySettings:         garbage,
+            generationConfig: {
+                stopSequences:      ['STOP','Title'],
+                responseMimeType:   'text/plain',
+                responseModalities: ['TEXT'],
+                temperature:        llmSettings.temperature || 0.5,
+                maxOutputTokens:    llmSettings.maxOutputTokens || 10000,
+                candidateCount:     1,
+                topP:               llmSettings.topP || 0.9,
+                topK:               llmSettings.topK || 50,
+                enableEnhancedCivicAnswers: false,
+                thinkingConfig:   {
+                    thinkingBudget:   llmSettings.thinkingBudget || 0
+                }
+            }
         };
 
         // Merge default parameters, then incoming user parameters (which might override temp, max_tokens, etc.),
         const finalApiPayload = {
-            ...defaultApiParameters,
+            ...apiParameters,
             contents: messagesForApi      // Ensure our carefully constructed messages array is used
         };
         console.log('Worker: Here is the final API payload:', finalApiPayload);
@@ -93,8 +103,9 @@ self.onmessage = async function(event) {
             body: JSON.stringify(finalApiPayload)
         };
 
-        console.log('Worker: Making API call Meta API with payload:', finalApiPayload);
-        const apiCallResponse = await fetch(apiUrl, apiOptions);
+        console.log('Worker: Making API call, Gemini API with payload:', finalApiPayload);
+        // const apiCallResponse = await fetch(apiUrl, apiOptions);
+        const apiCallResponse = JSON.stringify({candidates: [{role: model, content: {parts:[{text: "This is a test"}]}}]})
 
         if (!apiCallResponse.ok) {
             let errorDetails = await apiCallResponse.text();
@@ -110,9 +121,9 @@ self.onmessage = async function(event) {
 
         const apiData = await apiCallResponse.json();
         console.log('Worker: API call successful, response:', apiData);
-        const choice = apiData.choices[0]
+        const choice = apiData.candidates[0]
         console.log('Worker: API choice:', choice);
-        const msgResponse = choice.message // OpenAI's API response text is in choices[0].message.content
+        const msgResponse = choice.content // OpenAI's API response text is in choices[0].message.content
 
         // Send the successful result back to the main thread
         self.postMessage({ type: 'success', data: msgResponse });

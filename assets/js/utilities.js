@@ -1,40 +1,78 @@
 /**
- * Transforms platoHtml format to MPUJ (Multi-part User JSON) format.
+ * Transforms platoHtml format to MPUJ (Multi-Part User JSON) array
+ * for Gemini API.
+ * Consecutive non-model messages are grouped into a single 'user' message
+ * with multiple parts. Each part includes the speaker's name and utterance.
+ * Model messages have a single part with the utterance.
+ *
  * @param {string} platoHtml - The platoHtml formatted string.
- * @returns {string} - JSON array of message objects with utterances of participants as 'parts'.
+ * @returns {Array<Object>} - An array of message objects suitable for Gemini API `contents`.
+ *                            Each object has 'role' ('user' or 'model') and 'parts' (an array of text parts).
+ *                            Returns an empty array if platoHtml is empty or whitespace.
+ * @throws {Error} If platoHtml is null, undefined, or not a string.
+ * @throws {Error} If window.machineConfig or window.machineConfig.name is not available.
  */
 function platoHtmlToMpuj(platoHtml) {
-  if (!platoHtml || typeof platoHtml !== 'string') {
-    throw new Error('Invalid input: platoHtml must be a non-empty string');
+  if (platoHtml === null || typeof platoHtml !== 'string') {
+    throw new Error('Invalid input: platoHtml must be a string.');
+  }
+  if (!platoHtml.trim()) {
+    return []; // Return empty array for empty or whitespace-only HTML
   }
 
-  const messages = [];
+  if (!window.machineConfig || typeof window.machineConfig.name !== 'string' || !window.machineConfig.name.trim()) {
+    console.error('platoHtmlToMpuj: machineConfig.name is not available or empty. Please ensure window.machineConfig.name is correctly set.');
+    throw new Error('machineConfig.name is not configured. Cannot determine model messages.');
+  }
+  const modelNameUpper = window.machineConfig.name.toUpperCase();
+
+  const mpujMessages = [];
+  let currentUserParts = []; // To accumulate parts for the current user message
+
   const parser = new DOMParser();
   const doc = parser.parseFromString(platoHtml, 'text/html');
   const paragraphs = doc.querySelectorAll('p.dialogue');
 
   paragraphs.forEach(p => {
     const speakerSpan = p.querySelector('span.speaker');
-    if (!speakerSpan) return; // Skip malformed paragraphs
-
-    const speaker = speakerSpan.textContent.trim();
-    const utterance = p.textContent.replace(speakerSpan.textContent, '').replace(/:\s*/, '').trim();
-
-    let role = 'user';
-    if (speaker.toUpperCase() === machineConfig.name) {
-      role = 'assistant';
-    } else if (speaker.toUpperCase() === 'INSTRUCTIONS') {
-      role = 'system';
+    if (!speakerSpan) {
+      console.warn('Skipping paragraph due to missing speaker span:', p.outerHTML);
+      return; // Skip malformed paragraphs
     }
 
-    messages.push({
-      role: role,
-      name: speaker,
-      content: utterance
-    });
+    const speaker = speakerSpan.textContent.trim();
+
+    // Extract utterance: text after the speaker span, with leading colon/whitespace removed.
+    const fullParaText = p.textContent || '';
+    let utterance = fullParaText.substring(speakerSpan.textContent.length).trim();
+    if (utterance.startsWith(':')) {
+      utterance = utterance.substring(1).trim();
+    }
+
+    const isModelMessage = speaker.toUpperCase() === modelNameUpper;
+
+    if (isModelMessage) {
+      // If there are accumulated user parts, push them as a single user message first.
+      if (currentUserParts.length > 0) {
+        mpujMessages.push({ role: 'user', parts: currentUserParts });
+        currentUserParts = []; // Reset for the next sequence of user messages
+      }
+      // Add the model message.
+      mpujMessages.push({ role: 'model', parts: [{ text: utterance }] });
+    } else {
+      // This is a part of a user message (from any participant other than the model,
+      // including "INSTRUCTIONS" if present).
+      // The part includes the speaker's name and their utterance.
+      currentUserParts.push({ text: `${speaker}: ${utterance}` });
+    }
   });
 
-  return messages
+  // After iterating through all paragraphs, if there are any remaining user parts, add them.
+  if (currentUserParts.length > 0) {
+    mpujMessages.push({ role: 'user', parts: currentUserParts });
+  }
+
+  return mpujMessages;
 }
 
 /**
@@ -96,37 +134,84 @@ function platoTextToPlatoHtml(platoText) {
 }
 
 /**
- * Transforms platoText format to MPUJ (Multi-part User JSON) format.
+ * Transforms platoText format to MPUJ (Multi-Part User JSON) array
+ * for Gemini API.
+ * Consecutive non-model messages are grouped into a single 'user' message
+ * with multiple parts. Each part includes the speaker's name and utterance.
+ * Model messages have a single part with the utterance.
+ *
  * @param {string} platoText - The platoText formatted string.
- * @returns {string} - JSON array of message objects with participants as 'parts'.
+ * @returns {Array<Object>} - An array of message objects suitable for Gemini API `contents`.
+ *                            Each object has 'role' ('user' or 'model') and 'parts' (an array of text parts).
+ *                            Returns an empty array if platoText is empty or whitespace.
+ * @throws {Error} If platoText is null, undefined, or not a string.
+ * @throws {Error} If window.machineConfig or window.machineConfig.name is not available.
  */
 function platoTextToMpuj(platoText) {
-  if (!platoText || typeof platoText !== 'string') {
-    throw new Error('Invalid input: platoText must be a non-empty string');
+  if (platoText === null || typeof platoText !== 'string') {
+    throw new Error('Invalid input: platoText must be a string.');
+  }
+  if (!platoText.trim()) {
+    return []; // Return empty array for empty or whitespace-only text
   }
 
-  const regex = /([A-Za-z0-9_ -]+):\s*(.*?)\n\n/gs;
-  const messages = [];
+  if (!window.machineConfig || typeof window.machineConfig.name !== 'string' || !window.machineConfig.name.trim()) {
+    console.error('platoTextToMpuj: machineConfig.name is not available or empty. Please ensure window.machineConfig.name is correctly set.');
+    throw new Error('machineConfig.name is not configured. Cannot determine model messages.');
+  }
+  const modelNameUpper = window.machineConfig.name.toUpperCase();
+
+  const mpujMessages = [];
+  let currentUserParts = []; // To accumulate parts for the current user message
+
+  // Regex to capture "Speaker: Utterance" followed by two newlines
+  // It captures the speaker (group 1) and the utterance (group 2)
+  const regex = /([A-Za-z0-9_ -]+):\s*([\s\S]*?)(?=\n\n[A-Za-z0-9_ -]+:|\n*$)/g;
   let match;
 
-  while ((match = regex.exec(platoText)) !== null) {
-    const speaker = match[1].trim();
-    const utterance = match[2].trim();
+  // Iterate over all matches in the platoText
+  // We need to adjust the regex or post-processing slightly because the original
+  // regex /([A-Za-z0-9_ -]+):\s*(.*?)\n\n/gs might not capture the last utterance
+  // if it's not followed by \n\n.
+  // A simpler approach is to split by \n\n and then parse each block.
 
-    let role = 'user';
-    if (speaker.toUpperCase() === 'MACHINA RATIOCINATRIX') {
-      role = 'assistant';
-    } else if (speaker.toUpperCase() === 'INSTRUCTIONS') {
-      role = 'system';
+  const messageBlocks = platoText.trim().split(/\n\n+/); // Split by one or more pairs of newlines
+
+  messageBlocks.forEach(block => {
+    if (!block.trim()) return; // Skip empty blocks
+
+    const parts = block.match(/^([A-Za-z0-9_ -]+):\s*([\s\S]*)$/);
+    if (!parts || parts.length < 3) {
+      console.warn('Skipping malformed message block in platoTextToMpuj:', block);
+      return; // Skip malformed blocks
     }
 
-    messages.push({
-      role: role,
-      name: speaker,
-      content: utterance
-    });
+    const speaker = parts[1].trim();
+    const utterance = parts[2].trim();
+
+    const isModelMessage = speaker.toUpperCase() === modelNameUpper;
+
+    if (isModelMessage) {
+      // If there are accumulated user parts, push them as a single user message first.
+      if (currentUserParts.length > 0) {
+        mpujMessages.push({ role: 'user', parts: currentUserParts });
+        currentUserParts = []; // Reset for the next sequence of user messages
+      }
+      // Add the model message.
+      mpujMessages.push({ role: 'model', parts: [{ text: utterance }] });
+    } else {
+      // This is a part of a user message (from any participant other than the model).
+      // The part includes the speaker's name and their utterance.
+      currentUserParts.push({ text: `${speaker}: ${utterance}` });
+    }
+  });
+
+  // After iterating through all blocks, if there are any remaining user parts, add them.
+  if (currentUserParts.length > 0) {
+    mpujMessages.push({ role: 'user', parts: currentUserParts });
   }
-  return messages
+
+  return mpujMessages;
 }
 
 /**

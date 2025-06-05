@@ -193,11 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 10. Event listener for auto-saving to localStorage on input
-    textarea.addEventListener('input', () => {
-        localStorage.setItem('multilogue', textarea.value);
-    });
-    // 11. Event listener for saving to file (Ctrl+Shift+Enter) - Always "Save As"
+    // 10. Event listener for saving to file (Ctrl+Shift+Enter) - Always "Save As"
     document.addEventListener('keydown', async (event) => {
         if (event.ctrlKey && event.shiftKey && event.key === 'Enter') {
             event.preventDefault();
@@ -240,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 12. Event listener for LLM communications (Alt+Shift)
+    // 11. Event listener for LLM communications (Alt+Shift)
     document.addEventListener('keydown', function(event) {
         if (event.altKey && event.shiftKey) {
             event.preventDefault();
