@@ -258,6 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Alt+Shift pressed. Preparing to send dialogue to LLM worker...');
 
             try {
+                const cmjMessages = platoHtmlToCmj(htmlContent); // Ensure platoHtmlToCmj is global
                 const mpujMessages = platoHtmlToMpuj(htmlContent); // platoHtmlToCmj is global
 
                 const userQueryParameters = {
@@ -276,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         try {
                             const llmResponseData = e.data.data;
-                            if (!llmResponseData || !llmResponseData.content || llmResponseData.content.length === 0) {
+                            if (!llmResponseData || !llmResponseData.content) {
                                 console.error('LLM response is missing a message content.');
                                 alert('Received an empty or invalid response from the LLM.');
                                 return;
@@ -284,13 +285,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                             // Remove Meta's stop_reason from the message
                             console.log('Initial llmResponseData:', llmResponseData)
-                            // delete llmResponseData.stop_reason;
-                            // console.log('Final assistantMessagePayload:', assistantMessagePayload)
 
                             const newCmjMessage = {
-                                role: llmResponseData.role,
+                                role: 'assistant',
                                 name: machineConfig.name,
-                                content: llmResponseData.content
+                                content: llmResponseData.content.parts[0].text
                             };
 
                             // cmjMessages (from the outer scope of the Alt+Shift listener) is updated

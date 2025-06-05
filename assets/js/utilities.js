@@ -243,3 +243,39 @@ function mpjToPlatoText(mpjMessage) {
   });
   return platoText;
 }
+
+/**
+ * Transforms an array of CMJ message objects to platoText format.
+ * @param {Array<Object>} cmjMessages - An array of CMJ message objects.
+ *                                      Each object should have 'name' and 'content' properties.
+ * @returns {string} - The platoText formatted string.
+ */
+function CmjToPlatoText(cmjMessages) {
+  if (!Array.isArray(cmjMessages)) {
+    console.error('Invalid input: cmjMessages must be an array.');
+    // Consider throwing an error for more robust handling:
+    // throw new Error('Invalid input: cmjMessages must be an array.');
+    return ''; // Return empty string if input is not an array
+  }
+  let platoText = '';
+
+  cmjMessages.forEach(message => {
+    // Ensure the message object has the expected 'name' and 'content' properties
+    if (message && typeof message.name === 'string' && typeof message.content === 'string') {
+      const speaker = message.name.trim(); // Trim individual parts for cleanliness
+
+      // Normalize newlines within the LLM's utterance:
+      // - Convert sequences of two or more newlines to '\n\t'
+      //   to match platoText's internal paragraph formatting.
+      // - Then, trim the result.
+      let utterance = message.content.replace(/\n{2,}/g, '\n\t');
+      utterance = utterance.trim();
+
+      // Append the formatted string, ensuring it ends with two newlines
+      platoText += `${speaker}: ${utterance}\n\n`;
+    } else {
+      console.warn('Skipping malformed CMJ message object during CmjToPlatoText conversion:', message);
+    }
+  });
+  return platoText;
+}

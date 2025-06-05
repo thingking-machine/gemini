@@ -123,10 +123,9 @@ self.onmessage = async function(event) {
         console.log('Worker: API call successful, response:', apiData);
         const choice = apiData.candidates[0]
         console.log('Worker: API choice:', choice);
-        const msgResponse = choice.content // OpenAI's API response text is in choices[0].message.content
 
         // Send the successful result back to the main thread
-        self.postMessage({ type: 'success', data: msgResponse });
+        self.postMessage({ type: 'success', data: choice });
 
     } catch (error) {
         console.error('Worker: An error occurred:', error.message, error); // Log the full error object for more details
