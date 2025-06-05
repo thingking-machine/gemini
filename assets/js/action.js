@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const numValue = parseFloat(value);
           llmSettings[key] = isNaN(numValue) ? value : numValue;
         } else if (key === 'topK') {
-          const numValue = parseFloat(value);
+          const numValue = parseInt(value, 10);
           llmSettings[key] = isNaN(numValue) ? value : numValue;
         } else {
           llmSettings[key] = value;
