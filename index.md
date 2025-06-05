@@ -3,8 +3,10 @@ layout: home
 title: Thingking Machine
 ---
 # Thingking Machine
-<pre>
-  'Machina Ratiocinatrix' is a term used by Norbert Wiener in the introduction to his 
-  book "Cybernetics, or Control and Communication in the Animal and the Machine".
-</pre>
-[Page 1](./pages/page_1)
+
+<br>
+Go directly to the [Dialogue Page](/openai/machine) or change an submit the settings.
+<br><br>
+
+{% include parameter-form.html %}
+

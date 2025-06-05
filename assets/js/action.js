@@ -1,5 +1,34 @@
 
 document.addEventListener('DOMContentLoaded', () => {
+    const llmSettings = {};
+    const queryParams = new URLSearchParams(window.location.search);
+
+    // Iterate over all query parameters found in the URL
+    for (const [key, value] of queryParams.entries()) {
+        // Basic type conversion for known numeric fields
+        if (key === 'temperature') {
+          const numValue = parseFloat(value);
+          llmSettings[key] = isNaN(numValue) ? value : numValue;
+        } else if (key === 'maxOutputTokens') {
+            const numValue = parseInt(value, 10);
+            llmSettings[key] = isNaN(numValue) ? value : numValue;
+        } else if (key === 'thinkingBudget') {
+            const numValue = parseInt(value, 10);
+            llmSettings[key] = isNaN(numValue) ? value : numValue;
+        } else if (key === 'topP') {
+          const numValue = parseFloat(value);
+          llmSettings[key] = isNaN(numValue) ? value : numValue;
+        } else if (key === 'topK') {
+          const numValue = parseFloat(value);
+          llmSettings[key] = isNaN(numValue) ? value : numValue;
+        } else {
+          llmSettings[key] = value;
+        }
+      }
+    // Make the parameters globally available for other scripts
+    window.llmSettings = llmSettings;
+    console.log('LLM Settings:', window.llmSettings)
+
     // Check whether the page has the container.
     const contentContainer = document.querySelector('.container-md.markdown-body');
     if (!contentContainer) {
@@ -233,14 +262,15 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Alt+Shift pressed. Preparing to send dialogue to LLM worker...');
 
             try {
-                const cmjMessages = platoHtmlToCmj(htmlContent); // platoHtmlToCmj is global
+                const mpujMessages = platoHtmlToMpuj(htmlContent); // platoHtmlToCmj is global
 
                 const userQueryParameters = {
                     config: window.machineConfig,
-                    messages: cmjMessages
+                    settings: window.llmSettings,
+                    messages: mpujMessages
                 };
 
-                console.log('Alt+Shift: Launching LLM worker with CMJ messages:', userQueryParameters);
+                console.log('Alt+Shift: Launching LLM worker with MPUJ messages:', userQueryParameters);
                 const llmWorker = new Worker(machineConfig.work);
 
                 llmWorker.onmessage = function(e) {

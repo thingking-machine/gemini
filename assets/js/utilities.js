@@ -1,9 +1,9 @@
 /**
- * Transforms platoHtml format to CMJ (Chat Messages JSON) format.
+ * Transforms platoHtml format to MPUJ (Multi-part User JSON) format.
  * @param {string} platoHtml - The platoHtml formatted string.
- * @returns {string} - JSON stringified array of message objects.
+ * @returns {string} - JSON array of message objects with utterances of participants as 'parts'.
  */
-function platoHtmlToCmj(platoHtml) {
+function platoHtmlToMpuj(platoHtml) {
   if (!platoHtml || typeof platoHtml !== 'string') {
     throw new Error('Invalid input: platoHtml must be a non-empty string');
   }
@@ -96,11 +96,11 @@ function platoTextToPlatoHtml(platoText) {
 }
 
 /**
- * Transforms platoText format to CMJ (Chat Messages JSON) format.
+ * Transforms platoText format to MPUJ (Multi-part User JSON) format.
  * @param {string} platoText - The platoText formatted string.
- * @returns {string} - JSON stringified array of message objects.
+ * @returns {string} - JSON array of message objects with participants as 'parts'.
  */
-function platoTextToCmj(platoText) {
+function platoTextToMpuj(platoText) {
   if (!platoText || typeof platoText !== 'string') {
     throw new Error('Invalid input: platoText must be a non-empty string');
   }
@@ -130,12 +130,12 @@ function platoTextToCmj(platoText) {
 }
 
 /**
- * Transforms an array of CMJ message objects to platoText format.
- * @param {Array<Object>} cmjMessages - An array of CMJ message objects.
+ * Transforms a MPJ (Multi-part JSON) message to platoText format.
+ * @param {Array<Object>} mpjMessage - a MPJ (Multi-part JSON) message object.
  *                                      Each object should have 'name' and 'content' properties.
  * @returns {string} - The platoText formatted string.
  */
-function CmjToPlatoText(cmjMessages) {
+function mpjToPlatoText(mpjMessage) {
   if (!Array.isArray(cmjMessages)) {
     console.error('Invalid input: cmjMessages must be an array.');
     // Consider throwing an error for more robust handling:
