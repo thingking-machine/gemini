@@ -105,7 +105,7 @@ self.onmessage = async function(event) {
 
         console.log('Worker: Making API call, Gemini API with payload:', finalApiPayload);
         // const apiCallResponse = await fetch(apiUrl, apiOptions);
-        const apiCallResponse = JSON.stringify({candidates: [{role: model, content: {parts:[{text: "This is a test"}]}}]})
+        const apiCallResponse = JSON.stringify({candidates: [{role: "model", content: {parts:[{text: "This is a test"}]}}]})
 
         if (!apiCallResponse.ok) {
             let errorDetails = await apiCallResponse.text();
