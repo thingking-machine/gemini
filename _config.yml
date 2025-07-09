@@ -6,16 +6,16 @@ relative_links:
 include:
   - README.md
   - LICENSE.md
-url: https://reasoning-machine.github.io
+url: https://thingking-machine.github.io
 baseurl: /gemini
 
-title: Reasoning Machine
+title: Thingking Machine
 description: This is a machine that reasons.
 
 machine:
-  name: Reasoning-Machine
-  verb: Reasoning
-  instructions_file: reasoning.txt
+  name: Thingking-Machine
+  verb: Thingking
+  instructions_file: thingking.txt
   token: gemini.txt
   apiUrl: https://generativelanguage.googleapis.com/v1beta/models/
 

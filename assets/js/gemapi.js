@@ -29,14 +29,14 @@ self.onmessage = async function (event) {
 			if (!instructionResponse.ok) {
 				console.log(`Worker: HTTP error fetching instruction! status: ${instructionResponse.status}. Using default instruction.`);
 				// Default instruction if fetching fails or file not found
-				instructionText = 'You are an eloquent and concise assistant by the name "Reasoning-Machine". \n';
+				instructionText = 'You are an eloquent and concise assistant by the name "Thingking-Machine". \n';
 			} else {
 				instructionText = (await instructionResponse.text()).trim();
 				console.log('Worker: Instruction fetched successfully.');
 			}
 		} catch (fetchError) {
 			console.error('Worker: Error during instruction file fetch:', fetchError.message, '. Using default instruction.');
-			instructionText = 'You are an eloquent and concise assistant by the name "Reasoning-Machine".\n';
+			instructionText = 'You are an eloquent and concise assistant by the name "Thingking-Machine".\n';
 		}
 
 		// --- 3. Prepare messages for the API call ---

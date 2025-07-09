@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Reasoning
+title: Thingking
 ---
 <div id="machina-config"
      data-machine-settings="{{ site.machine | jsonify | escape }}"
