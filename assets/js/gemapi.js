@@ -21,7 +21,7 @@ self.onmessage = async function (event) {
 
 	try {
 		// --- 1. Fetch token was here ---
-		// --- 2. Fetch instruction ---
+		// --- 2. Fetch instruction from the config or the form file ---
 		let instructionText; // Declare here to ensure it's in scope
 		try {
 			console.log('Worker: Fetching the Machine instruction from https://localhost');
