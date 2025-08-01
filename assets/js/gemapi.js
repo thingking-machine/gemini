@@ -56,6 +56,7 @@ self.onmessage = async function (event) {
 		}
 
 		// --- 4. Prepare the final API URL ---
+		console.log(`Worker: Fetching the Machine instruction from https://localhost/${machineConfig.fallback_llm}`);
 		const llm = llmSettings.model || machineConfig.fallback_llm;
 		const apiUrl = machineConfig.apiUrl + llm + ':generateContent?key=' + llmSettings.token
 
