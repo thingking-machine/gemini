@@ -60,6 +60,7 @@ class MachineApp {
     
     this._applyQueryParameters();
     console.log('Final LLM Settings:', this.settings.llm);
+    console.log('Final Machina Settings:', this.settings.machine);
   }
   
   /**
@@ -67,8 +68,6 @@ class MachineApp {
    */
   _applyQueryParameters() {
     const queryParams = new URLSearchParams(window.location.search);
-    // set default instruction of the Machina as default that can be rewritten.
-    this.settings.llm['instructions_file'] = this.settings.machine['instructions_file']
     for (const [key, value] of queryParams.entries()) {
       if (['temperature', 'topP', 'topK'].includes(key)) {
         const numValue = parseFloat(value);
@@ -79,6 +78,9 @@ class MachineApp {
       } else if (key === 'includeThoughts') {
         const boolValue = value === 'true';
         llmSettings[key] = boolValue;
+      } else if (['instructions_file'].includes(key)) {
+        // Change default Machina instructions file name if received.
+        this.settings.machine['instructions_file'] = value;
       } else {
         this.settings.llm[key] = value;
       }

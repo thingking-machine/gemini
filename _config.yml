@@ -18,6 +18,7 @@ machine:
   instructions_file: gemini_thingking.txt
   token: gemini.txt
   apiUrl: https://generativelanguage.googleapis.com/v1beta/models/
+  fallback_llm: gemini-2.5-pro
 
 app:
   worker_name: gemapi.js
