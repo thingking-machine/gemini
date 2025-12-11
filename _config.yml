@@ -25,7 +25,7 @@ app:
   worker_name: gemapi.js
 
 lm:
-  model: gemini-3-pro-preview
+  model: gemini-2.5-flash
   maxOutputTokens: 65530
   temperature: 1.0
   topP: 0.9
